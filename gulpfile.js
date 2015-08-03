@@ -1,33 +1,27 @@
 var gulp = require('gulp'),
     tsc = require('gulp-typescript');
     babel = require('gulp-babel'),
+    del = require('del'),
     cache = require('gulp-cached'),
     concat = require('gulp-concat'),
     remember = require('gulp-remember'),
     minimist = require('minimist'),
     connect = require('gulp-connect');
 
-var babelOptions = {
-  modules: "system",
-  moduleIds: true,
-  getModuleId: function(name) {
-    return "app/" + name;
+function getBabelOptions(moduleType) {
+  return {
+    modules: moduleType || "system",
+    moduleIds: true,
+    getModuleId: function(name) {
+      return "app/" + name;
+    }
   }
-};
-
-var commonBabelOptions = {
-  modules: "common",
-  moduleIds: true,
-  getModuleId: function(name) {
-    return "app/" + name;
-  }
-};
+}
 
 var tscOptions = {
   target: 'ES6',
   allowNonTsExtensions: true,
   isolatedModules: true,
-  //declaration: true, //generate d.ts files
   emitDecoratorMetadata: true,
   experimentalDecorators: true,
   noEmitOnError: false,  // ignore errors
@@ -35,9 +29,9 @@ var tscOptions = {
 }
 
 var tscReporter = {
-    error: function (error) {
-        console.error(error.message);
-    }
+  error: function (error) {
+    console.error(error.message);
+  }
 };
 
 var flagConfig = {
@@ -55,13 +49,17 @@ gulp.task('serve', ['build'], function() {
   });
 });
 
+gulp.task('clean', function(done) {
+  del(['www/_app'], done);
+});
+
 gulp.task('watch', ['serve'], function(){
-  gulp.watch('src/**/*.js', ['transpile']);
-  gulp.watch('src/**/*.html', ['copy-html']);
+  gulp.watch('app/**/*.js', ['transpile']);
+  gulp.watch('app/**/*.html', ['copy-html']);
 });
 
-gulp.task('transpile', function() {
-  var stream = gulp.src(['src/**/*.js', '!src/systemjs-config.js'])
+function transpile(moduleType) {
+  var stream = gulp.src(['app/**/*.js'])
     .pipe(cache('transpile', { optimizeMemory: true }))
     // transpile to es6 with typescript compiler for decorators
     // you could have type checking by changing the reporter
@@ -71,7 +69,7 @@ gulp.task('transpile', function() {
       stream.emit('end');
     })
     // lower es6 to es5 wrapped in System.register() using babel
-    .pipe(babel(babelOptions))
+    .pipe(babel(getBabelOptions(moduleType)))
     .on('error', function (err) {
       console.log("ERROR: " + err.message);
       this.emit('end');
@@ -81,46 +79,23 @@ gulp.task('transpile', function() {
     .pipe(remember('es5-source-files'))
     // create the bundle
     .pipe(concat('app.bundle.js'))
-    .pipe(gulp.dest('www/js'));
+    .pipe(gulp.dest('www/_app'));
 
   return stream;
-});
+}
 
-gulp.task('transpile.commonjs', function() {
-  var stream = gulp.src(['app/**/*.es6'])
-    .pipe(cache('transpile', { optimizeMemory: true }))
-    // transpile to es6 with typescript compiler for decorators
-    // you could have type checking by changing the reporter
-    // but we don't use it
-    .pipe(tsc(tscOptions, null, tscReporter))
-    .on('error', function (err) {
-      stream.emit('end');
-    })
-    // lower es6 to es5 wrapped in System.register() using babel
-    .pipe(babel(commonBabelOptions))
-    .on('error', function (err) {
-      console.log("ERROR: " + err.message);
-      this.emit('end');
-    })
-    .pipe(gulp.dest('app'))
-    // only want to transpile files that have changed, but need to concatenate
-    // all transpiled files into our bundle
-    .pipe(remember('es5-source-files'))
-    // create the bundle
-    .pipe(concat('app.bundle.js'))
-    .pipe(gulp.dest('www/js'));
-
-  return stream;
-});
+gulp.task('transpile', function(){ return transpile("system") });
+gulp.task('transpile.commonjs', function(){ return transpile("common") });
 
 gulp.task('copy-html', function() {
-  return gulp.src('src/**/*.html')
-    .pipe(gulp.dest('www'));
+  return gulp.src('app/**/*.html')
+    .pipe(gulp.dest('www/_app'));
 });
 
 gulp.task('copy-lib', function() {
   return gulp.src([
-      'lib/**/*.js',
+      'lib/ionic/js/bundle.js',
+      //'lib/**/*.js',
       'lib/**/*.css',
       'lib/**/fonts/**/*'
      ])
