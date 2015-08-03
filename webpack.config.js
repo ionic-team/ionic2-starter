@@ -1,22 +1,28 @@
+var webpack = require('webpack');
+
 module.exports = {
-  entry: "./app/app.es6",
-  output: {
-    path: __dirname,
-    filename: "app.js"
-  },
-  module: {
-    loaders: [
-      { test: /\.es6$/, loader: "awesome-typescript-loader", exclude: /node_modules/ },
+  entry: {
+    'app': "./app/app.js",
+    'angular2': [
+      // Angular 2 Deps
+      'zone.js',
+      'reflect-metadata',
+      'rtts_assert/rtts_assert',
+      'angular2/angular2'
     ]
   },
+  output: {
+    path: __dirname,
+    filename: "www/script.js"
+  },
   resolve: {
-    alias: {
-      'ionic': 'ionic/es5'
-    },
     modulesDirectories: [
-      'lib',
+      'lib/ionic',
       'node_modules'
     ],
-    extensions: ['', '.js', '.es6']
-  }
+    extensions: ['', '.js']
+  },
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin("angular2", "angular2.js")
+  ]
 };

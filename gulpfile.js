@@ -15,6 +15,14 @@ var babelOptions = {
   }
 };
 
+var commonBabelOptions = {
+  modules: "common",
+  moduleIds: true,
+  getModuleId: function(name) {
+    return "app/" + name;
+  }
+};
+
 var tscOptions = {
   target: 'ES6',
   allowNonTsExtensions: true,
@@ -71,7 +79,34 @@ gulp.task('transpile', function() {
     // only want to transpile files that have changed, but need to concatenate
     // all transpiled files into our bundle
     .pipe(remember('es5-source-files'))
-    // create the bundle 
+    // create the bundle
+    .pipe(concat('app.bundle.js'))
+    .pipe(gulp.dest('www/js'));
+
+  return stream;
+});
+
+gulp.task('transpile.commonjs', function() {
+  var stream = gulp.src(['app/**/*.es6'])
+    .pipe(cache('transpile', { optimizeMemory: true }))
+    // transpile to es6 with typescript compiler for decorators
+    // you could have type checking by changing the reporter
+    // but we don't use it
+    .pipe(tsc(tscOptions, null, tscReporter))
+    .on('error', function (err) {
+      stream.emit('end');
+    })
+    // lower es6 to es5 wrapped in System.register() using babel
+    .pipe(babel(commonBabelOptions))
+    .on('error', function (err) {
+      console.log("ERROR: " + err.message);
+      this.emit('end');
+    })
+    .pipe(gulp.dest('app'))
+    // only want to transpile files that have changed, but need to concatenate
+    // all transpiled files into our bundle
+    .pipe(remember('es5-source-files'))
+    // create the bundle
     .pipe(concat('app.bundle.js'))
     .pipe(gulp.dest('www/js'));
 
@@ -89,7 +124,7 @@ gulp.task('copy-lib', function() {
       'lib/**/*.css',
       'lib/**/fonts/**/*'
      ])
-     .pipe(gulp.dest('www/lib')); 
+     .pipe(gulp.dest('www/lib'));
 });
 
 gulp.task('build', ['copy-lib', 'copy-html', 'transpile']);
