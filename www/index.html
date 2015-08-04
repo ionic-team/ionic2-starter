@@ -13,9 +13,8 @@
     <ion-loading-icon></ion-loading-icon>
   </ion-app>
 
-  <script src="lib/bundle.js"></script>
+  <script src="lib/bundle.js"></script> 
   <script src="_app/app.bundle.js"></script>
-  <script>System.import('app/app')</script>
-
+  <script>System && System.import && System.import('app/app')</script>
 </body>
 </html>

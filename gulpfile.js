@@ -1,12 +1,13 @@
 var gulp = require('gulp'),
     tsc = require('gulp-typescript');
     babel = require('gulp-babel'),
+    webpack = require('gulp-webpack'),
     del = require('del'),
     cache = require('gulp-cached'),
     concat = require('gulp-concat'),
-    remember = require('gulp-remember'),
     minimist = require('minimist'),
-    connect = require('gulp-connect');
+    connect = require('gulp-connect'),
+    runSequence = require('run-sequence');
 
 function getBabelOptions(moduleType) {
   return {
@@ -39,24 +40,31 @@ var flagConfig = {
   default: { port: 8100 }
 };
 
-var flags = minimist(process.argv.slice(2), flagConfig);
-
-gulp.task('serve', ['build'], function() {
-  connect.server({
-    root: 'www',
-    port: flags.port,
-    livereload: false
-  });
-});
-
-gulp.task('clean', function(done) {
-  del(['www/_app'], done);
-});
-
-gulp.task('watch', ['serve'], function(){
-  gulp.watch('app/**/*.js', ['transpile']);
+gulp.task('systemjs.watch', function(done) {
+  gulp.watch('app/**/*.js', ["bundle.systemjs"]);
   gulp.watch('app/**/*.html', ['copy-html']);
+  done();
 });
+
+gulp.task('webpack.watch', function(done) {
+  gulp.watch('app/**/*.js', ["transpile.commonjs"]);
+  gulp.watch('app/**/*.html', ['copy-html']);
+  done();
+});
+
+function watch(buildType, done) {
+  //systemjs or webpack
+  var buildName = "build." + buildType;
+  var watchName = buildType + ".watch";
+
+  runSequence(
+    'clean',
+    'serve',
+    watchName,
+    buildName,
+    done
+  );
+}
 
 function transpile(moduleType) {
   var stream = gulp.src(['app/**/*.js'])
@@ -74,17 +82,26 @@ function transpile(moduleType) {
       console.log("ERROR: " + err.message);
       this.emit('end');
     })
-    // only want to transpile files that have changed, but need to concatenate
-    // all transpiled files into our bundle
-    .pipe(remember('es5-source-files'))
-    // create the bundle
-    .pipe(concat('app.bundle.js'))
     .pipe(gulp.dest('www/_app'));
 
   return stream;
 }
 
-gulp.task('transpile', function(){ return transpile("system") });
+var flags = minimist(process.argv.slice(2), flagConfig);
+
+gulp.task('serve', function() {
+  connect.server({
+    root: 'www',
+    port: flags.port,
+    livereload: false
+  });
+});
+
+gulp.task('clean', function(done) {
+  del(['www/_app'], done);
+});
+
+gulp.task('transpile.systemjs', function(){ return transpile("system") });
 gulp.task('transpile.commonjs', function(){ return transpile("common") });
 
 gulp.task('copy-html', function() {
@@ -98,8 +115,30 @@ gulp.task('copy-lib', function() {
       //'lib/**/*.js',
       'lib/**/*.css',
       'lib/**/fonts/**/*'
-     ])
-     .pipe(gulp.dest('www/lib'));
+    ])
+    .pipe(gulp.dest('www/lib'));
 });
 
-gulp.task('build', ['copy-lib', 'copy-html', 'transpile']);
+gulp.task('bundle.systemjs', ['transpile.systemjs'], function(done){
+  return gulp.src(['www/_app/**/*.js', '!www/_app/app.bundle.js'])
+    .pipe(concat('app.bundle.js'))
+    .pipe(gulp.dest('www/_app'))
+});
+
+gulp.task('bundle.webpack', ['transpile.commonjs'], function() {
+  var config = require('./webpack.config.js'); 
+  return gulp.src("www/_app/app.js")
+    .pipe(webpack(config))
+    .pipe(gulp.dest('./'));
+});
+
+gulp.task('build.systemjs', ['copy-lib', 'copy-html', 'bundle.systemjs']);
+gulp.task('build.webpack', ['copy-lib', 'copy-html', 'bundle.webpack']);
+
+gulp.task('watch.systemjs', function(done){
+  watch("systemjs", done);
+});
+
+gulp.task('watch.webpack', function(done){
+  watch("webpack", done);
+});

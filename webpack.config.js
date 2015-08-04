@@ -2,9 +2,10 @@ var webpack = require('webpack');
 
 module.exports = {
   entry: {
-    'app': "./app/app.js",
+    'app': "./www/_app/app.js",
     'angular2': [
       // Angular 2 Deps
+      'traceur-runtime',
       'zone.js',
       'reflect-metadata',
       'rtts_assert/rtts_assert',
@@ -13,7 +14,7 @@ module.exports = {
   },
   output: {
     path: __dirname,
-    filename: "www/script.js"
+    filename: "www/_app/app.bundle.js"
   },
   resolve: {
     modulesDirectories: [
@@ -23,6 +24,7 @@ module.exports = {
     extensions: ['', '.js']
   },
   plugins: [
-    new webpack.optimize.CommonsChunkPlugin("angular2", "angular2.js")
-  ]
+    new webpack.optimize.CommonsChunkPlugin("angular2", "www/lib/bundle.js")
+  ],
+  watch: true // watch for changes after building
 };
