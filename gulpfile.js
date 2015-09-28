@@ -12,12 +12,29 @@ var gulp = require('gulp'),
     autoprefixer = require('gulp-autoprefixer'),
     watch = require('gulp-watch'),
     browserSync = require('browser-sync'),
+    through2 = require('through2'),
+    babel = require('babel'),
     reload = browserSync.reload;
 
 
 var IONIC_DIR = "node_modules/ionic-framework/"
 //var IONIC_DIR = "node_modules/ionic2/dist/"
 
+gulp.task('routes', function(){
+  var routes = [];
+  gulp.src('www/app/**/*.js')
+    .pipe(through2.obj(function(file, enc, next){
+      var contents = file.contents.toString();
+      var output = babel.transform(contents, { code: false, optional: ['es7.decorators'] });
+      
+      findIonicViewClass(output);
+
+      next();
+    }))
+    .on('end', function(){
+      console.log('end');
+    });    
+})
 
 /******************************************************************************
  * watch
@@ -167,3 +184,48 @@ var flagConfig = {
   default: { port: 8100 }
 };
 var flags = minimist(process.argv.slice(2), flagConfig);
+
+
+function findIonicViewClass(output){
+  var programBody = output.ast.program.body;
+
+  // var MyClass = (function () {
+  var varNodes = programBody.filter(function(node) { 
+    return node.type === "VariableDeclaration";
+  });
+  if (varNodes) {
+    return varNodes.map(function(node){
+      try {
+        var declarationBodies = node.declarations[0].init.callee.body.body;
+
+        // Get all expressions, we want one like this:
+        // MyClass = (0, _ionicIonic.IonicView)({ ... })(MyClass) 
+        var expressionNodes = declarationBodies.filter(function(node){
+          return node.type === "ExpressionStatement";
+        });
+        for (var i = 0, ii = expressionNodes.length; i < ii; i++) {
+          try {
+            // two expressions, 0 and _ionicIonic.IonicView
+            // (0, _ionicIonic.IonicView) 
+            var expressions = expressionNodes[i].expression.right.left.callee.callee.expressions; 
+            for (var j = 0, jj = expressions.length; j < jj; j++) {
+              if (expressions[j].property && expressions[j].property.name &&
+                  expressions[j].property.name === "IonicView") {
+
+                // Get class name from expression argument
+                // (0, _ionicIonic.IonicView)({ ... })(MyClass)
+                return expressionNodes[i].expression.right.left.arguments[0].name;
+              } 
+            }
+            return null
+          } catch(e) {} //Keep going, 
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }).filter(function(e){ return e !== null });
+  } else {
+    return [];
+  }
+}

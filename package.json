@@ -9,6 +9,7 @@
     "gulp-sass": "2.0.4",
     "gulp-watch": "4.3.4",
     "minimist": "1.1.1",
+    "through2": "^2.0.0",
     "typescript": "1.5.3",
     "webpack": "1.10.5"
   },
