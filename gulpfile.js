@@ -17,8 +17,8 @@ var gulp = require('gulp'),
     reload = browserSync.reload;
 
 
-var IONIC_DIR = "node_modules/ionic-framework/"
-//var IONIC_DIR = "node_modules/ionic2/dist/"
+//var IONIC_DIR = "node_modules/ionic-framework/"
+var IONIC_DIR = "node_modules/ionic2/dist/"
 
 gulp.task('routes', function(){
   var routeNames = [];
@@ -90,7 +90,6 @@ gulp.task('watch', ['sass', 'fonts'], function(done) {
     gulp.start('sass');
   });
   compile(true, function(){
-    gulp.start('serve');
     done();
   });
 });
