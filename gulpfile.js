@@ -13,7 +13,7 @@ var gulp = require('gulp'),
     watch = require('gulp-watch'),
     browserSync = require('browser-sync'),
     through2 = require('through2'),
-    babel = require('babel'),
+    ts = require('typescript'),
     reload = browserSync.reload;
 
 
@@ -21,20 +21,64 @@ var IONIC_DIR = "node_modules/ionic-framework/"
 //var IONIC_DIR = "node_modules/ionic2/dist/"
 
 gulp.task('routes', function(){
-  var routes = [];
-  gulp.src('www/app/**/*.js')
+  var routeNames = [];
+  var routePaths = [];
+  var appPath;
+
+  return gulp.src('www/app/**/*.{js,ts}')
     .pipe(through2.obj(function(file, enc, next){
       var contents = file.contents.toString();
-      var output = babel.transform(contents, { code: false, optional: ['es7.decorators'] });
-      
-      findIonicViewClass(output);
+      var sourceFile = ts.createSourceFile('', contents, ts.ScriptTarget.ES6, true);
+      debugger;
+      ts.forEachChild(sourceFile, function(node){
+        if (node.decorators) {
+          for (var  i = 0, ii = node.decorators.length; i < ii; i++) {
+            try {
+              if (node.decorators[i].expression.expression.text === "IonicView") {
+                routeNames.push(node.name.text);
+                routePaths.push(file.path);
+              } else if (node.decorators[i].expression.expression.text === "App") {
+                appPath = file.path;
+              }
+            } catch(e) {}
+          }
+        }
+      });
 
       next();
     }))
     .on('end', function(){
-      console.log('end');
-    });    
+    var i = 0;
+    var importPaths = generateImportPaths(appPath, routePaths);
+
+
+    });
 })
+
+function generateImportPaths(appPath, routePaths) {
+  var ii = appPath.length;
+  var importPaths = [];
+  routePaths.forEach(function(path){
+    // remove .ts or .js
+    path = path.slice(0, -3);
+
+    // get path relative to file where @App is
+    var i = 0;
+    var importPath;
+    while(i < ii && appPath.charAt(i) === path.charAt(i)) i++;
+    importPath = path.substring(i, path.length);
+
+    // make it relative
+    importPath = './' + importPath;
+
+    // avoid duplicates
+    if (importPaths.indexOf(importPath) === -1) {
+      importPaths.push(importPath);
+    }
+  })
+
+  return importPaths;
+}
 
 /******************************************************************************
  * watch
@@ -190,7 +234,7 @@ function findIonicViewClass(output){
   var programBody = output.ast.program.body;
 
   // var MyClass = (function () {
-  var varNodes = programBody.filter(function(node) { 
+  var varNodes = programBody.filter(function(node) {
     return node.type === "VariableDeclaration";
   });
   if (varNodes) {
@@ -199,15 +243,15 @@ function findIonicViewClass(output){
         var declarationBodies = node.declarations[0].init.callee.body.body;
 
         // Get all expressions, we want one like this:
-        // MyClass = (0, _ionicIonic.IonicView)({ ... })(MyClass) 
+        // MyClass = (0, _ionicIonic.IonicView)({ ... })(MyClass)
         var expressionNodes = declarationBodies.filter(function(node){
           return node.type === "ExpressionStatement";
         });
         for (var i = 0, ii = expressionNodes.length; i < ii; i++) {
           try {
             // two expressions, 0 and _ionicIonic.IonicView
-            // (0, _ionicIonic.IonicView) 
-            var expressions = expressionNodes[i].expression.right.left.callee.callee.expressions; 
+            // (0, _ionicIonic.IonicView)
+            var expressions = expressionNodes[i].expression.right.left.callee.callee.expressions;
             for (var j = 0, jj = expressions.length; j < jj; j++) {
               if (expressions[j].property && expressions[j].property.name &&
                   expressions[j].property.name === "IonicView") {
@@ -215,10 +259,10 @@ function findIonicViewClass(output){
                 // Get class name from expression argument
                 // (0, _ionicIonic.IonicView)({ ... })(MyClass)
                 return expressionNodes[i].expression.right.left.arguments[0].name;
-              } 
+              }
             }
             return null
-          } catch(e) {} //Keep going, 
+          } catch(e) {} //Keep going,
         }
         return null;
       } catch (e) {
