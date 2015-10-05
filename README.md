@@ -16,17 +16,17 @@ Ionic 2 is based on the new [2.x version of AngularJS](https://angular.io/), and
 The `gulp watch` task will build Ionic2, which may take a few moments for the initial build. After the files have finished building, a browser will open with the Ionic2 starter app. Any source file changes will rebuild the app and live reload the page. Also be sure to emulate the app in iOS and Android devices ([Chrome Screen Emulation](https://developer.chrome.com/devtools/docs/device-mode#screen-emulator)).
 
 #### Notes:
-- To develop against the ionic2 master branch (or any commit/release/tag), you'll need to do the following:
+- To develop against a local version of ionic2 you'll need to do the following:
 ```bash
-# you can install from either a local ionic2 or from github
-# use ~/git/ionic2#commit for a specific commit
+# do this in your local ionic2 directory
+$ cd ionic2 && gulp src
+$ npm link
 
-# npm install driftyco/ionic2  #github
-$ npm install ~/git/ionic2  #local
-$ cd node_modules/ionic2 && npm install
-$ gulp src
+# now go to your ionic2-starter directory
+$ cd ionic2-starter
+$ npm link ionic2
 ```
-And then update your [`webpack.config.js`](https://github.com/driftyco/ionic2-starter/blob/master/webpack.config.js#L32) file:
+And then update your [`webpack.config.js`](https://github.com/driftyco/ionic2-starter/blob/master/webpack.config.js#L32) file by uncommenting the lines for local development:
 ```js
 resolve: {
   modulesDirectories: [
