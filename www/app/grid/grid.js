@@ -1,7 +1,7 @@
-import {IonicView} from 'ionic/ionic';
+import {Page} from 'ionic/ionic';
 
 
-@IonicView({
+@Page({
   templateUrl: 'app/grid/grid.html'
 })
 export class GridPage {}

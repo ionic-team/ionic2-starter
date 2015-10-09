@@ -1,8 +1,8 @@
 import {ViewQuery, QueryList} from 'angular2/angular2';
-import {IonicApp, IonicView, NavController, Slides} from 'ionic/ionic';
+import {IonicApp, Page, NavController, Slides} from 'ionic/ionic';
 
 
-@IonicView({
+@Page({
   templateUrl: 'app/intro/intro.html'
 })
 export class IntroPage {

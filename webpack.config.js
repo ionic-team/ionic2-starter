@@ -1,9 +1,7 @@
 module.exports = {
   entry: [
     "zone.js",
-    "traceur-runtime",
     "reflect-metadata",
-    "rtts_assert/rtts_assert",
     "angular2/angular2",
     "ionic/ionic",
     "web-animations.min",
