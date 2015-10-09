@@ -21,7 +21,7 @@ export class IntroPage {
 
     // Get the child slider.
     // Note: this will be getting cleaner in a future Angular 2 release
-    slides.onChange((c) => {
+    slides.changes.toRx().subscribe(() => {
       this.mySlider = slides.first;
     });
   }
