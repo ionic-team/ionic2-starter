@@ -14,6 +14,7 @@ var gulp = require('gulp'),
     browserSync = require('browser-sync'),
     through2 = require('through2'),
     ts = require('typescript'),
+    fs = require('fs'),
     reload = browserSync.reload;
 
 
@@ -21,22 +22,24 @@ var IONIC_DIR = "node_modules/ionic-framework/"
 //var IONIC_DIR = "node_modules/ionic2/dist/"
 
 gulp.task('routes', function(){
-  var routeNames = [];
-  var routePaths = [];
+  var routes = [];
   var appPath;
 
   return gulp.src('www/app/**/*.{js,ts}')
     .pipe(through2.obj(function(file, enc, next){
       var contents = file.contents.toString();
       var sourceFile = ts.createSourceFile('', contents, ts.ScriptTarget.ES6, true);
-      debugger;
       ts.forEachChild(sourceFile, function(node){
         if (node.decorators) {
           for (var  i = 0, ii = node.decorators.length; i < ii; i++) {
             try {
-              if (node.decorators[i].expression.expression.text === "IonicView") {
-                routeNames.push(node.name.text);
-                routePaths.push(file.path);
+              if (node.decorators[i].expression.expression.text === "Page") {
+                var route = routes.filter(function(e){ return e.path === file.path });
+                if (route.length > 0) {
+                  route[0].pages.push(node.name.text);
+                } else {
+                  routes.push({ pages: [node.name.text], path: file.path });
+                }
               } else if (node.decorators[i].expression.expression.text === "App") {
                 appPath = file.path;
               }
@@ -48,22 +51,23 @@ gulp.task('routes', function(){
       next();
     }))
     .on('end', function(){
-    var i = 0;
-    var importPaths = generateImportPaths(appPath, routePaths);
-
-
+      var i = 0;
+      routes = generateImportPaths(appPath, routes);
+      var importStatements = generateImportStatements(routes).join("");
+      var appEntryFile = fs.readFileSync(appPath, 'utf-8');
+      appEntryFile = importStatements + appEntryFile;
+      fs.writeFileSync(appPath, appEntryFile);
     });
 })
 
-function generateImportPaths(appPath, routePaths) {
-  var ii = appPath.length;
-  var importPaths = [];
-  routePaths.forEach(function(path){
+function generateImportPaths(appPath, routes) {
+  routes.forEach(function(route){
     // remove .ts or .js
-    path = path.slice(0, -3);
+    path = route.path.slice(0, -3);
 
     // get path relative to file where @App is
     var i = 0;
+    var ii = appPath.length;
     var importPath;
     while(i < ii && appPath.charAt(i) === path.charAt(i)) i++;
     importPath = path.substring(i, path.length);
@@ -71,13 +75,16 @@ function generateImportPaths(appPath, routePaths) {
     // make it relative
     importPath = './' + importPath;
 
-    // avoid duplicates
-    if (importPaths.indexOf(importPath) === -1) {
-      importPaths.push(importPath);
-    }
+    route.path = importPath;
   })
 
-  return importPaths;
+  return routes;
+}
+
+function generateImportStatements(routes){
+  return routes.map(function(route){
+    return "import {" + route.pages.join(", ") + "} from '" + route.path + "';\n";
+  });
 }
 
 /******************************************************************************
