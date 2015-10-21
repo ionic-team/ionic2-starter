@@ -17,11 +17,12 @@ The `gulp watch` task will build Ionic2, which may take a few moments for the in
 - To develop against a local version of ionic2 you'll need to do the following:
 ```bash
 # do this in your local ionic2 directory
-$ cd /Users/Ionitron/ionic2 && gulp src
+$ cd /Users/Ionitron/git/ionic2
+$ gulp src
 $ npm link
 
 # now go to your ionic2-starter directory
-$ cd ionic2-starter
+$ cd /Users/Ionitron/git/ionic2-starter
 $ npm link ionic2
 ```
 And then update your [`webpack.config.js`](https://github.com/driftyco/ionic2-starter/blob/master/webpack.config.js#L32) file by uncommenting the lines for local development:
