@@ -17,7 +17,7 @@ The `gulp watch` task will build Ionic2, which may take a few moments for the in
 - To develop against a local version of ionic2 you'll need to do the following:
 ```bash
 # do this in your local ionic2 directory
-$ cd ionic2 && gulp src
+$ cd /Users/Ionitron/ionic2 && gulp src
 $ npm link
 
 # now go to your ionic2-starter directory
