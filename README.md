@@ -25,7 +25,7 @@ $ npm link
 $ cd /Users/Ionitron/git/ionic2-starter
 $ npm link ionic2
 ```
-And then update your [`webpack.config.js`](https://github.com/driftyco/ionic2-starter/blob/master/webpack.config.js#L32) file by uncommenting the lines for local development:
+And then update your [`webpack.config.js`](https://github.com/driftyco/ionic2-starter/blob/master/webpack.config.js#L37) file by uncommenting the lines for local development:
 ```js
 resolve: {
   modulesDirectories: [
