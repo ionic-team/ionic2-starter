@@ -1,4 +1,4 @@
-import {App, IonicApp, IonicPlatform} from 'ionic/ionic';
+import {App, IonicApp, Platform} from 'ionic/ionic';
 
 import {GettingStartedPage} from './getting-started/getting-started';
 import {IntroPage} from './intro/intro';
@@ -12,9 +12,8 @@ import {GridPage} from './grid/grid';
 @App({
   templateUrl: 'app/app.html'
 })
-
 class MyApp {
-  constructor(app: IonicApp, platform: IonicPlatform) {
+  constructor(app: IonicApp, platform: Platform) {
     this.app = app;
     this.platform = platform;
 
