@@ -8,5 +8,6 @@
    "experimentalDecorators": true,
    "noEmitOnError": false,
    "rootDir": "."
-  }
+  },
+  "compileOnSave": false
 }
